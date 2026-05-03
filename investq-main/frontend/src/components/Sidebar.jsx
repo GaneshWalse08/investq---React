@@ -123,6 +123,18 @@ export default function Sidebar() {
         <NavLink to="/ml" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
           <span className="icon">🤖</span> ML Predictions
         </NavLink>
+
+        <NavLink to="/simulator" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+          <span className="icon">🌍</span> Event Simulator
+        </NavLink>
+
+        <NavLink to="/planner" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+          <span className="icon">🎯</span> Goal Planner
+        </NavLink>
+
+        <NavLink to="/fd-analyzer" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+          <span className="icon">⚖️</span> FD Reality Check
+        </NavLink>
       </nav>
 
       <div

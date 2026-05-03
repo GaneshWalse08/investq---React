@@ -15,6 +15,9 @@ import PortfolioBuilder from "./pages/PortfolioBuilder";
 import Optimizer from "./pages/Optimizer";
 import MLPredictions from "./pages/MLPredictions";
 import "./index.css";
+import EventSimulator from './pages/EventSimulator';
+import GoalPlanner from './pages/GoalPlanner';
+import FDAnalyzer from './pages/FDAnalyzer';
 
 const ProtectedRoute = ({ children }) => {
   const user = localStorage.getItem("esg_user");
@@ -109,9 +112,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route path="/simulator" element={<ProtectedRoute><EventSimulator /></ProtectedRoute>} />
+          <Route path="/planner" element={<ProtectedRoute><GoalPlanner /></ProtectedRoute>} />
+          <Route path="/fd-analyzer" element={<ProtectedRoute><FDAnalyzer /></ProtectedRoute>} />
         </Routes>
         {/* DO NOT PUT ANY <Route> TAGS DOWN HERE! */}
       </Layout>
+
+      
     </Router>
   );
 }
