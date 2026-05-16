@@ -135,6 +135,14 @@ export default function Sidebar() {
         <NavLink to="/fd-analyzer" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
           <span className="icon">⚖️</span> FD Reality Check
         </NavLink>
+
+        <NavLink 
+  to="/schemes" 
+  className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}
+>
+  <span>🏛️</span>
+  <span>Govt Schemes</span>
+</NavLink>
       </nav>
 
       <div

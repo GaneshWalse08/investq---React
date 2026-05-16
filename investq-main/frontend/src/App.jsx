@@ -18,6 +18,7 @@ import "./index.css";
 import EventSimulator from './pages/EventSimulator';
 import GoalPlanner from './pages/GoalPlanner';
 import FDAnalyzer from './pages/FDAnalyzer';
+import SchemeIntelligence from './pages/SchemeIntelligence';
 
 
 const ProtectedRoute = ({ children }) => {
@@ -117,6 +118,7 @@ function App() {
           <Route path="/simulator" element={<ProtectedRoute><EventSimulator /></ProtectedRoute>} />
           <Route path="/planner" element={<ProtectedRoute><GoalPlanner /></ProtectedRoute>} />
           <Route path="/fd-analyzer" element={<ProtectedRoute><FDAnalyzer /></ProtectedRoute>} />
+          <Route path="/schemes" element={<ProtectedRoute><SchemeIntelligence /></ProtectedRoute>} />
         </Routes>
         {/* DO NOT PUT ANY <Route> TAGS DOWN HERE! */}
       </Layout>

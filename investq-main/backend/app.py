@@ -20,6 +20,8 @@ from services.optimization_service import OptimizationService
 from services.clustering_service import ClusteringService
 from services.news_service import NewsService
 from services.chatbot_service import ChatbotService
+from services.scheme_service import SchemeService
+from services.scheme_service import SchemeService
 
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
@@ -755,6 +757,27 @@ def analyze_news():
         'success': True, 'summary': summary, 'sector_analysis': impact_data,
         'trajectory': trajectory, 'months': ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6']
     })
+
+scheme_svc = SchemeService()
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# GOVT SCHEME INTELLIGENCE ENDPOINT
+# ════════════════════════════════════════════════════════════════════════════
+@app.route('/api/investments/schemes', methods=['POST', 'OPTIONS'])
+def recommend_schemes():
+    # 1. Handle the CORS preflight request from React
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
+        
+    # 2. Handle the actual data request
+    try:
+        data = request.json
+        result = scheme_svc.fetch_personalized_schemes(data)
+        return jsonify(result)
+    except Exception as e:
+        print(f"SCHEME ERROR: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     print("🚀 ESG Investment Platform starting on http://localhost:5000")
