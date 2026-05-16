@@ -123,3 +123,11 @@ body {
 .pos { color: #16a34a; } 
 .neg { color: var(--rust); }
 .loading { text-align: center; padding: 3rem; color: var(--smoke); font-size: 0.9rem; }
+
+.cards-row.cards-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  /* Ensure it wraps to next line if there are 20 items */
+  grid-auto-flow: row; 
+}

@@ -22,6 +22,7 @@ from services.news_service import NewsService
 from services.chatbot_service import ChatbotService
 from services.scheme_service import SchemeService
 from services.scheme_service import SchemeService
+from services.insurance_service import InsuranceService
 
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
@@ -777,6 +778,33 @@ def recommend_schemes():
         return jsonify(result)
     except Exception as e:
         print(f"SCHEME ERROR: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+    # --- Add where you initialize services ---
+insurance_svc = InsuranceService()
+
+# --- Add this new endpoint ---
+@app.route('/api/investments/insurance', methods=['POST', 'OPTIONS'])
+def compare_insurance():
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
+    try:
+        data = request.json
+        result = insurance_svc.compare_policies(data)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+
+@app.route('/api/investments/insurance/advanced', methods=['POST', 'OPTIONS'])
+def run_insurance_engine():
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
+    try:
+        data = request.json
+        result = insurance_svc.run_advanced_analysis(data)
+        return jsonify(result)
+    except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':

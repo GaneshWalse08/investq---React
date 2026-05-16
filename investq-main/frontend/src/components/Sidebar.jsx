@@ -136,6 +136,10 @@ export default function Sidebar() {
           <span className="icon">⚖️</span> FD Reality Check
         </NavLink>
 
+        <NavLink to="/insurance" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+  <span>🛡️</span><span>Insurance AI</span>
+</NavLink>
+
         <NavLink 
   to="/schemes" 
   className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}
