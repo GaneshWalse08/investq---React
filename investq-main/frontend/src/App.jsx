@@ -19,6 +19,7 @@ import EventSimulator from './pages/EventSimulator';
 import GoalPlanner from './pages/GoalPlanner';
 import FDAnalyzer from './pages/FDAnalyzer';
 
+
 const ProtectedRoute = ({ children }) => {
   const user = localStorage.getItem("esg_user");
   if (!user) {
