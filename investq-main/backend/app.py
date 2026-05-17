@@ -23,6 +23,7 @@ from services.chatbot_service import ChatbotService
 from services.scheme_service import SchemeService
 from services.scheme_service import SchemeService
 from services.insurance_service import InsuranceService
+from services.retirement_service import RetirementService
 
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
@@ -782,6 +783,7 @@ def recommend_schemes():
     
     # --- Add where you initialize services ---
 insurance_svc = InsuranceService()
+retirement_svc = RetirementService()
 
 # --- Add this new endpoint ---
 @app.route('/api/investments/insurance', methods=['POST', 'OPTIONS'])
@@ -794,7 +796,6 @@ def compare_insurance():
         return jsonify(result)
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
-    
 
 @app.route('/api/investments/insurance/advanced', methods=['POST', 'OPTIONS'])
 def run_insurance_engine():
@@ -805,6 +806,45 @@ def run_insurance_engine():
         result = insurance_svc.run_advanced_analysis(data)
         return jsonify(result)
     except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+# ════════════════════════════════════════════════════════════════════════════
+# RETIREMENT PLANNING ENDPOINT
+# ════════════════════════════════════════════════════════════════════════════
+@app.route('/api/retirement/analyze', methods=['POST', 'OPTIONS'])
+def analyze_retirement():
+    # Handle the CORS preflight request from React
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
+        
+    try:
+        data = request.json
+        result = retirement_svc.analyze_retirement(data)
+        return jsonify({"status": "success", "data": result}), 200
+    except Exception as e:
+        print(f"RETIREMENT ERROR: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
+
+ # ════════════════════════════════════════════════════════════════════════════
+# ML RETIREMENT PREDICTOR ENDPOINT
+# ════════════════════════════════════════════════════════════════════════════
+from services.ml_retirement_service import MLRetirementService
+ml_retirement_svc = MLRetirementService()
+
+@app.route('/api/retirement/predict', methods=['POST', 'OPTIONS'])
+def predict_retirement():
+    # 1. Handle the CORS preflight request from React
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
+        
+    # 2. Handle the actual data (POST request)
+    try:
+        data = request.json
+        result = ml_retirement_svc.predict_future(data)
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"ML RETIREMENT ERROR: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':

@@ -147,6 +147,15 @@ export default function Sidebar() {
   <span>🏛️</span>
   <span>Govt Schemes</span>
 </NavLink>
+
+
+<NavLink 
+  to="/retirement-planner" 
+  className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}
+>
+  <span>🏖️</span>
+  <span>Retirement Planner</span>
+</NavLink>
       </nav>
 
       <div

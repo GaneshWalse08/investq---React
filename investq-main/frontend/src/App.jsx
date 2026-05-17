@@ -20,6 +20,7 @@ import GoalPlanner from './pages/GoalPlanner';
 import FDAnalyzer from './pages/FDAnalyzer';
 import SchemeIntelligence from './pages/SchemeIntelligence';
 import InsuranceComparison from './pages/InsuranceComparison';
+import RetirementPlanner from './pages/RetirementPlanner';
 
 const ProtectedRoute = ({ children }) => {
   const user = localStorage.getItem("esg_user");
@@ -120,6 +121,7 @@ function App() {
           <Route path="/fd-analyzer" element={<ProtectedRoute><FDAnalyzer /></ProtectedRoute>} />
           <Route path="/schemes" element={<ProtectedRoute><SchemeIntelligence /></ProtectedRoute>} />
           <Route path="/insurance" element={<ProtectedRoute><InsuranceComparison /></ProtectedRoute>} />
+          <Route path="/retirement-planner" element={<RetirementPlanner />} />
         </Routes>
         {/* DO NOT PUT ANY <Route> TAGS DOWN HERE! */}
       </Layout>
