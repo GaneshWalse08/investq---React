@@ -1,7 +1,3 @@
-"""
-Authentication & User Management Service
-Upgraded: Now uses SQLite for permanent user storage.
-"""
 import sqlite3
 import hashlib
 import uuid
@@ -9,15 +5,15 @@ import json
 import time
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'esg_users.db')
-
 class AuthService:
     def __init__(self):
+        # Absolute path to ensure DB is never lost
+        self.db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'esg_users.db'))
         self._init_db()
         self._seed_demo_users()
 
     def _get_db_connection(self):
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -39,7 +35,6 @@ class AuthService:
         return hashlib.sha256(password.encode()).hexdigest()
 
     def _seed_demo_users(self):
-        # Check if demo user exists before seeding
         with self._get_db_connection() as conn:
             user = conn.execute('SELECT * FROM users WHERE username = ?', ('demo_investor',)).fetchone()
             if not user:

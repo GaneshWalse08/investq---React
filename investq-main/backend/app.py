@@ -57,39 +57,28 @@ def serve_frontend(path):
     return send_from_directory(frontend_dir, 'index.html')
 
 # ════════════════════════════════════════════════════════════════════════════
-# AUTH ENDPOINTS
+# AUTH ENDPOINTS (Restored SQLite Version)
 # ════════════════════════════════════════════════════════════════════════════
-@app.route('/api/auth/register', methods=['POST'])
+@app.route('/api/auth/register', methods=['POST', 'OPTIONS'])
 def register():
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
     data = request.json
     result = auth_svc.register(
-        data.get('username'), data.get('email'),
-        data.get('password'), data.get('preferences', {})
+        data.get('username'),
+        data.get('email'),
+        data.get('password'),
+        data.get('preferences')
     )
     return jsonify(result)
 
-@app.route('/api/auth/login', methods=['POST'])
+@app.route('/api/auth/login', methods=['POST', 'OPTIONS'])
 def login():
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
     data = request.json
     result = auth_svc.login(data.get('username'), data.get('password'))
-    if result['success']:
-        session['user_id'] = result['user']['id']
     return jsonify(result)
-
-@app.route('/api/auth/logout', methods=['POST'])
-def logout():
-    session.clear()
-    return jsonify({'success': True, 'message': 'Logged out'})
-
-@app.route('/api/auth/profile', methods=['GET'])
-def get_profile():
-    user_id = request.args.get('user_id')
-    return jsonify(auth_svc.get_profile(user_id))
-
-@app.route('/api/auth/profile', methods=['PUT'])
-def update_profile():
-    data = request.json
-    return jsonify(auth_svc.update_profile(data.get('user_id'), data.get('preferences', {})))
 
 # ════════════════════════════════════════════════════════════════════════════
 # MARKET DATA ENDPOINTS

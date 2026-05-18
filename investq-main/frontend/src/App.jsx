@@ -15,15 +15,15 @@ import PortfolioBuilder from "./pages/PortfolioBuilder";
 import Optimizer from "./pages/Optimizer";
 import MLPredictions from "./pages/MLPredictions";
 import "./index.css";
-import EventSimulator from './pages/EventSimulator';
-import GoalPlanner from './pages/GoalPlanner';
-import FDAnalyzer from './pages/FDAnalyzer';
-import SchemeIntelligence from './pages/SchemeIntelligence';
-import InsuranceComparison from './pages/InsuranceComparison';
-import RetirementPlanner from './pages/RetirementPlanner';
+import EventSimulator from "./pages/EventSimulator";
+import GoalPlanner from "./pages/GoalPlanner";
+import FDAnalyzer from "./pages/FDAnalyzer";
+import SchemeIntelligence from "./pages/SchemeIntelligence";
+import InsuranceComparison from "./pages/InsuranceComparison";
+import RetirementPlanner from "./pages/RetirementPlanner";
 
 const ProtectedRoute = ({ children }) => {
-  const user = localStorage.getItem("esg_user");
+  const user = localStorage.getItem("esg_user"); // Back to the old name!
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -54,11 +54,9 @@ function App() {
   return (
     <Router>
       <Layout>
-        {/* EVERYTHING MUST GO INSIDE THIS ROUTES BLOCK */}
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />
-
           <Route
             path="/dashboard"
             element={
@@ -115,18 +113,56 @@ function App() {
               </ProtectedRoute>
             }
           />
-
-          <Route path="/simulator" element={<ProtectedRoute><EventSimulator /></ProtectedRoute>} />
-          <Route path="/planner" element={<ProtectedRoute><GoalPlanner /></ProtectedRoute>} />
-          <Route path="/fd-analyzer" element={<ProtectedRoute><FDAnalyzer /></ProtectedRoute>} />
-          <Route path="/schemes" element={<ProtectedRoute><SchemeIntelligence /></ProtectedRoute>} />
-          <Route path="/insurance" element={<ProtectedRoute><InsuranceComparison /></ProtectedRoute>} />
-          <Route path="/retirement-planner" element={<RetirementPlanner />} />
+          <Route
+            path="/simulator"
+            element={
+              <ProtectedRoute>
+                <EventSimulator />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/planner"
+            element={
+              <ProtectedRoute>
+                <GoalPlanner />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/fd-analyzer"
+            element={
+              <ProtectedRoute>
+                <FDAnalyzer />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/schemes"
+            element={
+              <ProtectedRoute>
+                <SchemeIntelligence />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/insurance"
+            element={
+              <ProtectedRoute>
+                <InsuranceComparison />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/retirement-planner"
+            element={
+              <ProtectedRoute>
+                <RetirementPlanner />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-        {/* DO NOT PUT ANY <Route> TAGS DOWN HERE! */}
       </Layout>
-
-      
     </Router>
   );
 }

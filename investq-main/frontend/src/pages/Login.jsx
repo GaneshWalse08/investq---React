@@ -18,7 +18,6 @@ export default function Login() {
 
     try {
       if (isRegistering) {
-        // --- REAL REGISTRATION API CALL ---
         const res = await api.post('/auth/register', { username, email, password });
         if (res.data.success) {
           localStorage.setItem('esg_user', JSON.stringify(res.data.user));
@@ -27,7 +26,6 @@ export default function Login() {
           setError(res.data.message);
         }
       } else {
-        // --- REAL LOGIN API CALL ---
         const res = await api.post('/auth/login', { username, password });
         if (res.data.success) {
           localStorage.setItem('esg_user', JSON.stringify(res.data.user));

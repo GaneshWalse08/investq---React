@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 
 export default function Sidebar() {
   const navigate = useNavigate();
+  // Restored: Instantly grabs user from LocalStorage
   const userStr = localStorage.getItem("esg_user");
   const user = userStr ? JSON.parse(userStr) : { username: "Guest" };
 
@@ -39,7 +40,6 @@ export default function Sidebar() {
         >
           Overview
         </div>
-
         <NavLink
           to="/dashboard"
           className={({ isActive }) =>
@@ -48,7 +48,6 @@ export default function Sidebar() {
         >
           <span className="icon">🏠</span> Dashboard
         </NavLink>
-
         <NavLink
           to="/news"
           className={({ isActive }) =>
@@ -70,7 +69,6 @@ export default function Sidebar() {
         >
           Stocks
         </div>
-
         <NavLink
           to="/rankings"
           className={({ isActive }) =>
@@ -79,7 +77,6 @@ export default function Sidebar() {
         >
           <span className="icon">📊</span> ESG Rankings
         </NavLink>
-
         <NavLink
           to="/personalized"
           className={({ isActive }) =>
@@ -89,7 +86,6 @@ export default function Sidebar() {
           <span className="icon">🎯</span> My Recommendations
         </NavLink>
 
-        {/* <-- NEW PORTFOLIO SECTION --> */}
         <div
           className="nav-section"
           style={{
@@ -102,7 +98,6 @@ export default function Sidebar() {
         >
           Portfolio
         </div>
-
         <NavLink
           to="/portfolio"
           className={({ isActive }) =>
@@ -111,51 +106,86 @@ export default function Sidebar() {
         >
           <span className="icon">💼</span> Portfolio Builder
         </NavLink>
-
-        <NavLink to="/optimizer" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+        <NavLink
+          to="/optimizer"
+          className={({ isActive }) =>
+            isActive ? "nav-item active" : "nav-item"
+          }
+        >
           <span className="icon">⚗️</span> Optimizer
         </NavLink>
 
-        <div className="nav-section" style={{ padding: "0.3rem 1.5rem", fontSize: "0.7rem", color: "var(--smoke)", textTransform: "uppercase", marginTop: "0.8rem" }}>
+        <div
+          className="nav-section"
+          style={{
+            padding: "0.3rem 1.5rem",
+            fontSize: "0.7rem",
+            color: "var(--smoke)",
+            textTransform: "uppercase",
+            marginTop: "0.8rem",
+          }}
+        >
           Analytics
         </div>
-
-        <NavLink to="/ml" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+        <NavLink
+          to="/ml"
+          className={({ isActive }) =>
+            isActive ? "nav-item active" : "nav-item"
+          }
+        >
           <span className="icon">🤖</span> ML Predictions
         </NavLink>
-
-        <NavLink to="/simulator" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+        <NavLink
+          to="/simulator"
+          className={({ isActive }) =>
+            isActive ? "nav-item active" : "nav-item"
+          }
+        >
           <span className="icon">🌍</span> Event Simulator
         </NavLink>
-
-        <NavLink to="/planner" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+        <NavLink
+          to="/planner"
+          className={({ isActive }) =>
+            isActive ? "nav-item active" : "nav-item"
+          }
+        >
           <span className="icon">🎯</span> Goal Planner
         </NavLink>
-
-        <NavLink to="/fd-analyzer" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+        <NavLink
+          to="/fd-analyzer"
+          className={({ isActive }) =>
+            isActive ? "nav-item active" : "nav-item"
+          }
+        >
           <span className="icon">⚖️</span> FD Reality Check
         </NavLink>
-
-        <NavLink to="/insurance" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
-  <span>🛡️</span><span>Insurance AI</span>
-</NavLink>
-
-        <NavLink 
-  to="/schemes" 
-  className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}
->
-  <span>🏛️</span>
-  <span>Govt Schemes</span>
-</NavLink>
-
-
-<NavLink 
-  to="/retirement-planner" 
-  className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}
->
-  <span>🏖️</span>
-  <span>Retirement Planner</span>
-</NavLink>
+        <NavLink
+          to="/insurance"
+          className={({ isActive }) =>
+            isActive ? "nav-item active" : "nav-item"
+          }
+        >
+          <span>🛡️</span>
+          <span>Insurance AI</span>
+        </NavLink>
+        <NavLink
+          to="/schemes"
+          className={({ isActive }) =>
+            isActive ? "nav-item active" : "nav-item"
+          }
+        >
+          <span>🏛️</span>
+          <span>Govt Schemes</span>
+        </NavLink>
+        <NavLink
+          to="/retirement-planner"
+          className={({ isActive }) =>
+            isActive ? "nav-item active" : "nav-item"
+          }
+        >
+          <span>🏖️</span>
+          <span>Retirement Planner</span>
+        </NavLink>
       </nav>
 
       <div
