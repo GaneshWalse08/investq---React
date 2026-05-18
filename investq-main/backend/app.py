@@ -24,6 +24,7 @@ from services.scheme_service import SchemeService
 from services.scheme_service import SchemeService
 from services.insurance_service import InsuranceService
 from services.retirement_service import RetirementService
+from services.ml_recommendation_service import MLRecommendationService
 
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
@@ -45,6 +46,7 @@ clustering_svc    = ClusteringService()
 news_svc          = NewsService()
 chatbot_svc       = ChatbotService()
 ml_svc            = MLService(data_svc)
+ml_rec_svc = MLRecommendationService()
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -826,25 +828,70 @@ def analyze_retirement():
         return jsonify({"status": "error", "message": str(e)}), 500
     
 
- # ════════════════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════
 # ML RETIREMENT PREDICTOR ENDPOINT
 # ════════════════════════════════════════════════════════════════════════════
-from services.ml_retirement_service import MLRetirementService
-ml_retirement_svc = MLRetirementService()
-
 @app.route('/api/retirement/predict', methods=['POST', 'OPTIONS'])
-def predict_retirement():
-    # 1. Handle the CORS preflight request from React
+def ml_retirement_predict_handler():
+    # 1. Handle the CORS preflight request from the frontend
     if request.method == 'OPTIONS':
         return jsonify({'success': True}), 200
         
-    # 2. Handle the actual data (POST request)
+    # 2. Process the actual data prediction
     try:
         data = request.json
+        # This calls the predict_future method in services/ml_retirement_service.py
+        # This is where your 90.50% accuracy model runs
         result = ml_retirement_svc.predict_future(data)
         return jsonify(result), 200
     except Exception as e:
         print(f"ML RETIREMENT ERROR: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+    
+# ════════════════════════════════════════════════════════════════════════════
+# ML PERSONALIZED ASSET ALLOCATION ENDPOINT
+# ════════════════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════
+# ML PERSONALIZED ASSET ALLOCATION ENDPOINT
+# ════════════════════════════════════════════════════════════════════════════
+@app.route('/api/ml/recommend_allocation', methods=['POST', 'OPTIONS'])
+def ml_recommend_allocation_handler(): 
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
+        
+    try:
+        data = request.json
+        # Correctly map frontend keys to the ML model's expected profile format
+        profile = {
+            'age': float(data.get('age', 30)),
+            'annual_income': float(data.get('annual_income', 1000000)),
+            'tax_bracket': float(data.get('tax_bracket', 30.0)),
+            'risk_profile': 'Aggressive' if data.get('risk_tolerance') == 'high' else 'Conservative' if data.get('risk_tolerance') == 'low' else 'Moderate',
+            'financial_goal': data.get('financial_goal', 'Wealth Creation'),
+            'investment_horizon': 'Short Term' if '<' in data.get('duration', '') else 'Long Term' if '+' in data.get('duration', '') else 'Medium Term',
+            'esg_preference': 'High' if data.get('esg_priority') in ['high', 'very_high'] else 'Low' if data.get('esg_priority') == 'low' else 'Medium',
+            'health_risk': data.get('health_risk', 'Low')
+        }
+        
+        # Calls the get_recommendations method from MLRecommendationService
+        result = ml_rec_svc.get_recommendations(profile)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+
+    @app.route('/api/retirement/predict', methods=['POST', 'OPTIONS'])
+    
+    def ml_retirement_predict_handler():
+     if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
+    try:
+        data = request.json
+        # This calls the predict_future method in ml_retirement_service.py
+        result = ml_retirement_svc.predict_future(data)
+        return jsonify(result), 200
+    except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':

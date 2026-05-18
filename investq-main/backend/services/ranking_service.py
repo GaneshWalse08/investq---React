@@ -1,16 +1,13 @@
-"""
-Financial Scoring & Ranking Engine
-Combines financial performance with ESG weighting to produce ranked lists.
-Classification: Invest / Hold / Avoid
-"""
+import numpy as np
 
 class RankingService:
     def __init__(self, metrics_svc, esg_svc):
-        self._ms  = metrics_svc
+        self._ms = metrics_svc
         self._esg = esg_svc
 
     def _normalize(self, values):
         """Min-max normalize a list of values to [0, 1]."""
+        if not values: return []
         mn, mx = min(values), max(values)
         if mx == mn:
             return [0.5] * len(values)
@@ -21,58 +18,67 @@ class RankingService:
         tickers = list(all_metrics.keys())
 
         if sector != 'all':
-            esg_data = self._esg.get_esg
-            tickers = [t for t in tickers
+            tickers = [t for t in tickers 
                        if self._esg.get_esg(t).get('sector') == sector]
 
         rows = []
         for t in tickers:
             m = all_metrics[t]
             e = self._esg.get_esg(t)
-            if not m or not e:
-                continue
+            if not m or not e: continue
             rows.append({
-                'ticker'    : t,
-                'return_1y' : m.get('return_1y', 0),
+                'ticker': t,
+                'return_1y': m.get('return_1y', 0),
                 'volatility': m.get('volatility', 0),
-                'sharpe'    : m.get('sharpe', 0),
-                'esg_total' : e.get('total', 50),
+                'sharpe': m.get('sharpe', 0),
+                'esg_total': e.get('total', 50),
                 'esg_rating': e.get('rating', 'N/A'),
-                'sector'    : e.get('sector', 'Unknown'),
+                'sector': e.get('sector', 'Unknown'),
             })
 
-        if not rows:
-            return []
+        if not rows: return []
 
-        # Normalize components
-        ret_norm  = self._normalize([r['return_1y']  for r in rows])
-        # Low volatility is better → invert
-        vol_vals  = [r['volatility'] for r in rows]
-        vol_norm  = [1 - v for v in self._normalize(vol_vals)]
-        shrp_norm = self._normalize([r['sharpe']     for r in rows])
-        esg_norm  = self._normalize([r['esg_total']  for r in rows])
+        # 1. Normalize components
+        ret_norm = self._normalize([r['return_1y'] for r in rows])
+        vol_vals = [r['volatility'] for r in rows]
+        vol_norm = [1 - v for v in self._normalize(vol_vals)]  # Lower volatility is better
+        shrp_norm = self._normalize([r['sharpe'] for r in rows])
+        esg_norm = self._normalize([r['esg_total'] for r in rows])
 
         fin_weight = 1 - esg_weight
         results = []
+
+        # 2. First Pass: Calculate Total Scores for everyone
         for i, row in enumerate(rows):
-            fin_score  = (ret_norm[i] * 0.4 + vol_norm[i] * 0.3 + shrp_norm[i] * 0.3)
-            total_score = fin_score * fin_weight + esg_norm[i] * esg_weight
-
-            if total_score >= 0.65:
-                classification = 'Invest'
-            elif total_score >= 0.40:
-                classification = 'Hold'
-            else:
-                classification = 'Avoid'
-
+            fin_score = (ret_norm[i] * 0.4 + vol_norm[i] * 0.3 + shrp_norm[i] * 0.3)
+            total_score = (fin_score * fin_weight + esg_norm[i] * esg_weight) * 100
+            
             results.append({
                 **row,
-                'fin_score'      : round(fin_score * 100, 1),
-                'total_score'    : round(total_score * 100, 1),
-                'classification' : classification,
-                'explanation'    : self._explain(row, fin_score, esg_norm[i], classification),
+                'fin_score': round(fin_score * 100, 1),
+                'total_score': round(total_score, 1),
+                'esg_norm_val': esg_norm[i] # keeping for explanation
             })
 
+        # 3. Dynamic Classification based on Market Percentiles
+        all_final_scores = [r['total_score'] for r in results]
+        invest_threshold = np.percentile(all_final_scores, 80) # Top 20%
+        sell_threshold = np.percentile(all_final_scores, 30)   # Bottom 30%
+
+        # 4. Second Pass: Assign Signals relative to market performance
+        for r in results:
+            score = r['total_score']
+            if score >= invest_threshold:
+                r['classification'] = "Invest"
+            elif score <= sell_threshold:
+                r['classification'] = "Remove"
+            else:
+                r['classification'] = "Hold"
+            
+            # Generate the text explanation
+            r['explanation'] = self._explain(r, r['fin_score'], r['esg_norm_val'], r['classification'])
+
+        # 5. Sort by rank
         results.sort(key=lambda x: x['total_score'], reverse=True)
         for i, r in enumerate(results):
             r['rank'] = i + 1
@@ -81,25 +87,10 @@ class RankingService:
 
     def _explain(self, row, fin_score, esg_norm, cls):
         parts = []
-        if row['return_1y'] > 15:
-            parts.append(f"strong 1-year return of {row['return_1y']}%")
-        elif row['return_1y'] < -5:
-            parts.append(f"negative 1-year return of {row['return_1y']}%")
+        if row['return_1y'] > 15: parts.append(f"strong returns ({row['return_1y']}%)")
+        if row['volatility'] < 20: parts.append("low risk profile")
+        if row['sharpe'] > 1.5: parts.append("excellent efficiency")
+        if esg_norm > 0.7: parts.append(f"top-tier ESG ({row['esg_rating']})")
 
-        if row['volatility'] < 20:
-            parts.append("low volatility indicating stable price behaviour")
-        elif row['volatility'] > 40:
-            parts.append("high volatility suggesting elevated risk")
-
-        if row['sharpe'] > 1.5:
-            parts.append(f"excellent risk-adjusted return (Sharpe: {row['sharpe']})")
-        elif row['sharpe'] < 0.5:
-            parts.append(f"poor risk-adjusted return (Sharpe: {row['sharpe']})")
-
-        if esg_norm > 0.7:
-            parts.append(f"top-tier ESG profile (score: {row['esg_total']}, rating: {row['esg_rating']})")
-        elif esg_norm < 0.3:
-            parts.append(f"below-average ESG standing (score: {row['esg_total']}, rating: {row['esg_rating']})")
-
-        summary = ', '.join(parts) if parts else "mixed financial and ESG signals"
-        return f"Classified as '{cls}' based on {summary}."
+        summary = ', '.join(parts) if parts else "market-average performance"
+        return f"Classified as '{cls}' because it is in the {('top' if cls=='Invest' else 'bottom' if cls=='Remove' else 'middle')} tier of analyzed assets with {summary}."
