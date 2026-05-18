@@ -1,115 +1,156 @@
-# backend/services/retirement_service.py
 import math
+import sqlite3
+import json
+import os
+from services.ml_retirement_service import MLRetirementService
 
 class RetirementService:
     def __init__(self):
-        self.default_inflation = 0.06
-        self.safe_withdrawal_rate = 0.04 # The famous 4% rule
-        self.life_expectancy = 85
+        self.ml_service = MLRetirementService()
+        # ABSOLUTE path to avoid missing DB issues
+        self.db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'esg_users.db'))
+        self._init_db()
 
-    # Helper to make money look friendly
+    def _init_db(self):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.execute('''CREATE TABLE IF NOT EXISTS retirement_plans
+                            (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                             user_id TEXT,
+                             plan_data TEXT,
+                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"Retirement DB Init Error: {e}")
+
+    def save_plan(self, user_id, plan_data):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            # Insert standard stringified JSON
+            conn.execute('INSERT INTO retirement_plans (user_id, plan_data) VALUES (?, ?)',
+                         (str(user_id), json.dumps(plan_data)))
+            conn.commit()
+            conn.close()
+            return {"success": True, "message": "Plan saved successfully."}
+        except Exception as e:
+            return {"success": False, "message": f"DB Error: {str(e)}"}
+
+    def get_saved_plans(self, user_id):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute('SELECT * FROM retirement_plans WHERE user_id = ? ORDER BY created_at DESC', (str(user_id),)).fetchall()
+            conn.close()
+            
+            plans = []
+            for r in rows:
+                plans.append({
+                    "id": r['id'],
+                    "created_at": r['created_at'],
+                    "plan_data": json.loads(r['plan_data'])
+                })
+            return {"success": True, "plans": plans}
+        except Exception as e:
+            return {"success": False, "plans": [], "message": f"DB Error: {str(e)}"}
+
     def _format_money(self, amount):
-        if amount >= 10000000:
-            return f"₹{amount/10000000:.2f} Crores"
-        elif amount >= 100000:
-            return f"₹{amount/100000:.2f} Lakhs"
-        else:
-            return f"₹{amount:,.0f}"
+        if amount >= 10000000: return f"₹{amount/10000000:.2f} Cr"
+        elif amount >= 100000: return f"₹{amount/100000:.2f} Lakhs"
+        return f"₹{amount:,.0f}"
 
     def analyze_retirement(self, data):
-        current_age = int(data.get('current_age', 30))
-        retirement_age = int(data.get('retirement_age', 60))
-        current_expense = float(data.get('current_expense', 50000))
-        current_savings = float(data.get('current_savings', 500000))
-        monthly_investment = float(data.get('monthly_investment', 10000))
-        inflation_rate = float(data.get('inflation_rate', self.default_inflation))
-        portfolio_return = float(data.get('portfolio_return', 0.12)) 
-
-        years_to_retire = retirement_age - current_age
-        if years_to_retire <= 0:
-            return {"error": "Your retirement age must be higher than your current age."}
-
-        # 1. The Math
-        future_monthly_expense = current_expense * math.pow((1 + inflation_rate), years_to_retire)
-        future_annual_expense = future_monthly_expense * 12
-        required_corpus = future_annual_expense / self.safe_withdrawal_rate
-
-        fv_savings = current_savings * math.pow((1 + portfolio_return), years_to_retire)
-        monthly_rate = portfolio_return / 12
-        total_months = years_to_retire * 12
-        fv_investments = monthly_investment * ((math.pow((1 + monthly_rate), total_months) - 1) / monthly_rate) * (1 + monthly_rate)
-
-        projected_corpus = fv_savings + fv_investments
-        deficit = max(required_corpus - projected_corpus, 0)
+        ml_result = self.ml_service.predict_future(data)
         
-        # 2. THE MAGIC METRIC: Monthly Pension
-        monthly_pension = (projected_corpus * self.safe_withdrawal_rate) / 12
-
-        score = min(max(int((projected_corpus / required_corpus) * 100), 0), 100)
-
-        # 3. The Friendly AI Action Plan
-        plan = []
+        age = int(data.get('age', 30))
+        ret_age = 60
+        years = max(ret_age - age, 1)
+        expense = float(data.get('monthly_expenses', 30000))
+        savings = float(data.get('current_savings', 0)) + float(data.get('epf_balance', 0))
+        sip = float(data.get('monthly_sip', 0)) + float(data.get('ppf_contribution', 0)) + float(data.get('nps_contribution', 0))
         
-        # --- Pension Breakdown ---
-        plan.append({
-            "title": "💸 Your Monthly Pension (Salary without working)",
-            "desc": f"When you stop working at age {retirement_age}, your saved money will act like a salary machine. It will safely pay you {self._format_money(monthly_pension)} every single month for the rest of your life!"
+        inflation = float(data.get('inflation_assumption', 6.0)) / 100
+        risk = data.get('risk_appetite', 'Moderate')
+        ret = 0.12 if risk == 'Aggressive' else 0.10 if risk == 'Moderate' else 0.08
+
+        fv_expense = expense * math.pow((1 + inflation), years)
+        required_corpus = (fv_expense * 12) / 0.04 
+        
+        monthly_rate = ret / 12
+        total_months = years * 12
+        fv_savings = savings * math.pow((1 + ret), years)
+        
+        if monthly_rate > 0 and sip > 0:
+            fv_sip = sip * (((math.pow((1 + monthly_rate), total_months) - 1) / monthly_rate) * (1 + monthly_rate))
+        else:
+            fv_sip = sip * total_months
+            
+        projected_corpus = fv_savings + fv_sip
+        monthly_pension = (projected_corpus * 0.04) / 12
+
+        deficit = required_corpus - projected_corpus
+        extra_sip_needed = 0
+        if deficit > 0:
+            extra_sip_needed = deficit / (((math.pow((1 + monthly_rate), total_months) - 1) / monthly_rate) * (1 + monthly_rate))
+
+        specific_suggestions = []
+        emergency_fund = expense * 6
+        specific_suggestions.append({
+            "name": "Step 1: Build Your Safety Net (Do this first)",
+            "logic": f"Before doing anything else, make sure you have {self._format_money(emergency_fund)} sitting in a completely safe Bank FD or Savings Account. This is exactly 6 months of your current expenses (₹{expense} x 6). Do not touch this money unless someone goes to the hospital or you lose your job."
         })
 
-        # --- How to Optimize ---
-        if deficit > 0:
-            additional_sip = deficit / (((math.pow((1 + monthly_rate), total_months) - 1) / monthly_rate) * (1 + monthly_rate))
-            plan.append({
-                "title": "⚠️ How to fix your savings",
-                "desc": f"To afford your dream retirement, you are falling a bit short. Try to increase your monthly investment by {self._format_money(additional_sip)}. Cutting back on small daily expenses can help you easily reach this!"
+        if extra_sip_needed > 0:
+            equity_sip = extra_sip_needed * 0.70
+            debt_sip = extra_sip_needed * 0.30
+            specific_suggestions.append({
+                "name": "Step 2: Start a Stock Market SIP (For Fast Growth)",
+                "logic": f"Because of price rises, saving in a bank is not enough. You must start a new monthly SIP of {self._format_money(equity_sip)} in a 'Nifty 50 Index Mutual Fund'. This automatically puts your money into India's top 50 biggest companies (like Tata, Reliance, and HDFC) which historically grow very fast over 10+ years."
+            })
+            specific_suggestions.append({
+                "name": "Step 3: Build Safe Money (To protect against crashes)",
+                "logic": f"The stock market goes up and down. To protect yourself, put {self._format_money(debt_sip)} every month into a PPF account or buy Sovereign Gold Bonds. This money is backed by the Government of India and will never drop in value."
+            })
+            specific_suggestions.append({
+                "name": "Step 4: Increase Savings Every Year (The Secret Trick)",
+                "logic": "Every time you get a salary hike at your job, increase your SIP amounts by 10%. If you do this simple trick, you will easily cross the red Danger Line on the graph much faster than you think."
             })
         else:
-            plan.append({
-                "title": "✅ You are doing great!",
-                "desc": "Your current savings plan is perfect. If you keep investing this exact amount every month, you will be totally financially free!"
+            specific_suggestions.append({
+                "name": "Step 2: Maintain Your Current Momentum",
+                "logic": "You are currently in a fantastic position. Do not stop your monthly SIPs. Consistency is your biggest weapon right now."
+            })
+            specific_suggestions.append({
+                "name": "Step 3: Protect Your Wealth",
+                "logic": "Since you are already on track to retire safely, your main goal is protection. Make sure you have a comprehensive Health Insurance plan (minimum ₹10 Lakhs coverage) so a sudden medical emergency doesn't wipe out your hard-earned savings."
             })
 
-        # --- Where to Invest ---
-        if years_to_retire >= 10:
-            plan.append({
-                "title": "📈 Where exactly should you invest?",
-                "desc": "Because you have more than 10 years left, DO NOT keep money in a normal bank account (inflation will eat it). The AI suggests: Put 70% in Nifty 50 Index Mutual Funds (for high growth) and 30% in safe Government schemes like EPF or PPF."
+        coverage_percent = min(int((projected_corpus / max(required_corpus, 1)) * 100), 100)
+        final_score = ml_result["score"]
+        if coverage_percent >= 100: final_score = max(final_score, 95)
+        
+        status_text = "On Track (Safe)" if coverage_percent > 90 else "Needs Work" if coverage_percent > 60 else "Danger Zone"
+
+        chart_data = []
+        current = savings
+        for a in range(age, ret_age + 1):
+            chart_data.append({
+                "age": a, 
+                "projected_wealth": round(current, 2), 
+                "target_corpus": round(required_corpus, 2)
             })
-        elif years_to_retire >= 4:
-            plan.append({
-                "title": "⚖️ Where exactly should you invest?",
-                "desc": "You are getting closer to retirement. Balance your money: Put 50% in Mutual Funds (for growth) and 50% in very safe Fixed Deposits (FDs) or PPF to protect what you have earned."
-            })
-        else:
-            plan.append({
-                "title": "🛡️ Where exactly should you invest?",
-                "desc": "You are retiring very soon! Protect your money at all costs. Move 80% of your wealth into highly secure Senior Citizen Savings Schemes, Post Office Monthly Income Schemes, or FDs."
-            })
+            for _ in range(12): current = current * (1 + monthly_rate) + sip
 
         return {
-            "metrics": {
-                "monthly_pension": monthly_pension,
-                "required_corpus": required_corpus,
-                "projected_corpus": projected_corpus,
-                "future_monthly_expense": future_monthly_expense,
-                "readiness_score": score
+            "score": final_score,
+            "risk_label": status_text,
+            "total_wealth_at_60": self._format_money(projected_corpus),
+            "monthly_income_after_60": f"{self._format_money(monthly_pension)} / month",
+            "ai_main_suggestion": f"Based on 1,000 simulations, the AI calculates you are currently in the '{status_text}'. If you stop working at age {ret_age}, you will have {self._format_money(projected_corpus)}.",
+            "detailed_explanation": {
+                "inflation_impact": f"Right now, your family survives on {self._format_money(expense)} per month. But because of inflation (things getting more expensive every year), when you turn 60, that exact same lifestyle will cost you {self._format_money(fv_expense)} per month! Your savings must grow faster than this price rise.",
+                "score_reason": f"If you keep saving the way you are right now, you will only have {coverage_percent}% of the money you actually need to survive in your old age without asking others for help."
             },
-            "explainable_ai": {
-                "simple_plan": plan
-            },
-            "chart_data": self._generate_chart_data(current_age, retirement_age, current_savings, monthly_investment, portfolio_return, required_corpus)
+            "chart_data": chart_data,
+            "specific_suggestions": specific_suggestions
         }
-
-    def _generate_chart_data(self, start_age, ret_age, savings, monthly_investment, ret_rate, target):
-        data = []
-        current_wealth = savings
-        monthly_rate = ret_rate / 12
-        for age in range(start_age, ret_age + 1):
-            data.append({
-                "age": age,
-                "projected_wealth": round(current_wealth, 2),
-                "target_corpus": round(target, 2)
-            })
-            for _ in range(12):
-                current_wealth = current_wealth * (1 + monthly_rate) + monthly_investment
-        return data

@@ -811,47 +811,49 @@ def run_insurance_engine():
         return jsonify({'success': False, 'message': str(e)}), 500
     
 # ════════════════════════════════════════════════════════════════════════════
-# RETIREMENT PLANNING ENDPOINT
+# RETIREMENT PLANNING ENDPOINTS (DB & ML INTEGRATED)
 # ════════════════════════════════════════════════════════════════════════════
+@app.route('/api/retirement/predict', methods=['POST', 'OPTIONS'])
 @app.route('/api/retirement/analyze', methods=['POST', 'OPTIONS'])
-def analyze_retirement():
-    # Handle the CORS preflight request from React
+def analyze_retirement_handler():
     if request.method == 'OPTIONS':
         return jsonify({'success': True}), 200
-        
     try:
         data = request.json
         result = retirement_svc.analyze_retirement(data)
-        return jsonify({"status": "success", "data": result}), 200
+        return jsonify({"status": "success", "outputs": result}), 200
     except Exception as e:
-        print(f"RETIREMENT ERROR: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
-    
 
-# ════════════════════════════════════════════════════════════════════════════
-# ML RETIREMENT PREDICTOR ENDPOINT
-# ════════════════════════════════════════════════════════════════════════════
-@app.route('/api/retirement/predict', methods=['POST', 'OPTIONS'])
-def ml_retirement_predict_handler():
-    # 1. Handle the CORS preflight request from the frontend
+@app.route('/api/retirement/save', methods=['POST', 'OPTIONS'])
+def save_retirement_handler():
     if request.method == 'OPTIONS':
         return jsonify({'success': True}), 200
-        
-    # 2. Process the actual data prediction
     try:
         data = request.json
-        # This calls the predict_future method in services/ml_retirement_service.py
-        # This is where your 90.50% accuracy model runs
-        result = ml_retirement_svc.predict_future(data)
+        # Map user logic - default to 'guest' if not logged in
+        user_id = str(data.get('user_id', 'guest')) 
+        plan_data = data.get('plan_data')
+        
+        result = retirement_svc.save_plan(user_id, plan_data)
         return jsonify(result), 200
     except Exception as e:
-        print(f"ML RETIREMENT ERROR: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        import traceback
+        print(f"SAVE ERROR: {traceback.format_exc()}")
+        return jsonify({"success": False, "message": str(e)}), 500
 
-    
-# ════════════════════════════════════════════════════════════════════════════
-# ML PERSONALIZED ASSET ALLOCATION ENDPOINT
-# ════════════════════════════════════════════════════════════════════════════
+@app.route('/api/retirement/saved', methods=['GET', 'OPTIONS'])
+def get_saved_retirement_handler():
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
+    try:
+        user_id = str(request.args.get('user_id', 'guest'))
+        result = retirement_svc.get_saved_plans(user_id)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # ML PERSONALIZED ASSET ALLOCATION ENDPOINT
 # ════════════════════════════════════════════════════════════════════════════
@@ -862,7 +864,7 @@ def ml_recommend_allocation_handler():
         
     try:
         data = request.json
-        # Correctly map frontend keys to the ML model's expected profile format
+        # Map frontend keys to the ML model's expected profile format
         profile = {
             'age': float(data.get('age', 30)),
             'annual_income': float(data.get('annual_income', 1000000)),
@@ -874,25 +876,14 @@ def ml_recommend_allocation_handler():
             'health_risk': data.get('health_risk', 'Low')
         }
         
-        # Calls the get_recommendations method from MLRecommendationService
+        # Call the KNN Regressor from MLRecommendationService
         result = ml_rec_svc.get_recommendations(profile)
         return jsonify(result)
     except Exception as e:
+        import traceback
+        print(f"🚨 ALLOCATION ERROR:\n{traceback.format_exc()}")
         return jsonify({'success': False, 'message': str(e)}), 500
-    
 
-    @app.route('/api/retirement/predict', methods=['POST', 'OPTIONS'])
-    
-    def ml_retirement_predict_handler():
-     if request.method == 'OPTIONS':
-        return jsonify({'success': True}), 200
-    try:
-        data = request.json
-        # This calls the predict_future method in ml_retirement_service.py
-        result = ml_retirement_svc.predict_future(data)
-        return jsonify(result), 200
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     print("🚀 ESG Investment Platform starting on http://localhost:5000")

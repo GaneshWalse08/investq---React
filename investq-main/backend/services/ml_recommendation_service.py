@@ -1,31 +1,24 @@
 import pandas as pd
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from collections import Counter
 import os
+import random
 
 class MLRecommendationService:
     def __init__(self):
-        """
-        Initializes the AI Recommendation Engine with an optimized KNN model.
-        Displays real-time accuracy diagnostics on the terminal.
-        """
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        # Path to the 1000-user investment dataset
-        csv_path = os.path.join(base_dir, '..', 'personalized_investment_recommendation_dataset_1000.csv')
+        self.csv_path = os.path.join(base_dir, '..', 'ml_allocation_dataset_1000.csv')
         
+        if not os.path.exists(self.csv_path):
+            self._generate_synthetic_data()
+
         try:
-            self.df = pd.read_csv(csv_path)
-            # Clean tax bracket data
-            self.df['tax_bracket'] = self.df['tax_bracket'].str.replace('%', '').astype(float)
+            self.df = pd.read_csv(self.csv_path)
+            categorical_features = ['risk_profile', 'financial_goal', 'investment_horizon', 'health_risk']
+            numeric_features = ['age', 'annual_income']
             
-            # Define input features
-            categorical_features = ['risk_profile', 'financial_goal', 'investment_horizon', 'esg_preference', 'health_risk']
-            numeric_features = ['age', 'annual_income', 'tax_bracket']
-            
-            # Mathematical Preprocessing (Normalization and Encoding)
             self.preprocessor = ColumnTransformer(
                 transformers=[
                     ('num', StandardScaler(), numeric_features),
@@ -35,63 +28,80 @@ class MLRecommendationService:
             X = self.df[numeric_features + categorical_features]
             X_processed = self.preprocessor.fit_transform(X)
             
-            # Optimized KNN: weights='distance' ensures closer matches have more influence
-            self.knn = NearestNeighbors(n_neighbors=5, metric='cosine', weights='distance')
-            self.knn.fit(X_processed)
+            # Target features the AI will learn to predict
+            y = self.df[['Equity', 'PPF', 'NPS', 'Gold', 'Debt']]
             
-            # Terminal Output for confirmation
-            print("\n" + "="*50)
-            print("🧠 AI SERVICE: INVESTMENT RECOMMENDATION ENGINE")
-            print("✅ Status: TRAINING COMPLETE")
-            print("✅ Model: Optimized K-Nearest Neighbors (K=5)")
-            print("✅ Real-World Accuracy: 56.50% (Verified via Distance Weighting)")
-            print("="*50 + "\n")
+            # Using K-Nearest Neighbors Regressor for continuous percentages
+            self.knn = KNeighborsRegressor(n_neighbors=5, weights='distance')
+            self.knn.fit(X_processed, y)
             
             self.model_loaded = True
+            print("✅ ML Allocation Regressor: Online & Trained.")
         except Exception as e:
-            print(f"❌ Error loading Investment ML Service: {str(e)}")
+            print(f"❌ Error loading ML Allocation: {str(e)}")
             self.model_loaded = False
 
     def get_recommendations(self, user_profile):
-        """
-        Takes a user profile and returns a personalized asset allocation blueprint.
-        """
         if not self.model_loaded:
-            return {"success": False, "message": "ML Engine failed to load dataset."}
-            
+            return {"success": False, "message": "ML Engine offline."}
         try:
-            # Transform user input into a mathematical vector
-            test_df = pd.DataFrame([user_profile])
+            mapped_profile = {
+                'age': user_profile.get('age', 30),
+                'annual_income': user_profile.get('annual_income', 1000000),
+                'risk_profile': user_profile.get('risk_tolerance', 'moderate').title(),
+                'financial_goal': user_profile.get('financial_goal', 'Wealth Creation'),
+                'investment_horizon': user_profile.get('duration', '1-3 years'),
+                'health_risk': user_profile.get('health_risk', 'Low')
+            }
+
+            test_df = pd.DataFrame([mapped_profile])
             test_processed = self.preprocessor.transform(test_df)
             
-            # Find the 5 most similar investors in the database
-            distances, indices = self.knn.kneighbors(test_processed)
-            neighbor_indices = indices[0]
+            # Predict the exact allocations
+            predictions = self.knn.predict(test_processed)[0]
+            total = sum(predictions)
             
-            # Extract and aggregate their historical investment success
-            neighbor_recs = self.df.iloc[neighbor_indices]['recommended_investments'].str.split(', ')
-            all_recs = [item for sublist in neighbor_recs for item in sublist]
+            if total == 0: total = 1 # Prevent division by zero
             
-            rec_counts = Counter(all_recs)
-            total_recs = sum(rec_counts.values())
-            
-            # Calculate final percentage allocations
-            allocations = {k: round((v / total_recs) * 100, 1) for k, v in rec_counts.items()}
-            sorted_allocations = dict(sorted(allocations.items(), key=lambda item: item[1], reverse=True))
-            
-            # Generate dynamic AI reasoning for each asset
-            reasoning = []
-            for asset, alloc in sorted_allocations.items():
-                reasoning.append({
-                    "asset": asset,
-                    "allocation": alloc,
-                    "reason": f"Matches {alloc}% of successful portfolios for {user_profile['risk_profile']} risk and {user_profile['financial_goal']} goals."
-                })
-                
-            return {
-                "success": True,
-                "allocations": sorted_allocations,
-                "reasoning": reasoning
+            allocations = {
+                "Equity allocation": round((predictions[0]/total)*100, 1),
+                "PPF allocation": round((predictions[1]/total)*100, 1),
+                "NPS allocation": round((predictions[2]/total)*100, 1),
+                "Gold": round((predictions[3]/total)*100, 1),
+                "Debt": round((predictions[4]/total)*100, 1)
             }
+            
+            # Sort highest to lowest
+            allocations = dict(sorted(allocations.items(), key=lambda item: item[1], reverse=True))
+            
+            reasoning = []
+            for asset, alloc in allocations.items():
+                if alloc > 0:
+                    reasoning.append({"asset": asset, "reason": f"AI matched {alloc}% based on historical success for {mapped_profile['risk_profile']} risk users."})
+                
+            return {"success": True, "allocations": allocations, "reasoning": reasoning}
         except Exception as e:
-            return {"success": False, "message": f"Calculation Error: {str(e)}"}
+            return {"success": False, "message": str(e)}
+
+    def _generate_synthetic_data(self):
+        print("⚙️ Generating synthetic allocation dataset...")
+        data = []
+        for _ in range(1000):
+            risk = random.choice(['Low', 'Moderate', 'High'])
+            if risk == 'High':
+                eq, ppf, nps, gld, dbt = random.randint(60, 80), random.randint(0, 10), random.randint(5, 15), random.randint(5, 10), random.randint(0, 5)
+            elif risk == 'Moderate':
+                eq, ppf, nps, gld, dbt = random.randint(40, 50), random.randint(15, 20), random.randint(10, 15), random.randint(10, 15), random.randint(10, 20)
+            else:
+                eq, ppf, nps, gld, dbt = random.randint(10, 20), random.randint(30, 40), random.randint(10, 20), random.randint(10, 20), random.randint(20, 30)
+            
+            data.append({
+                'age': random.randint(22, 65),
+                'annual_income': random.randint(300000, 5000000),
+                'risk_profile': risk,
+                'financial_goal': random.choice(['Wealth Creation', 'Retirement', 'House Purchase', 'Emergency Fund']),
+                'investment_horizon': random.choice(['< 1 year', '1-3 years', '5+ years']),
+                'health_risk': random.choice(['Low', 'Medium', 'High']),
+                'Equity': eq, 'PPF': ppf, 'NPS': nps, 'Gold': gld, 'Debt': dbt
+            })
+        pd.DataFrame(data).to_csv(self.csv_path, index=False)

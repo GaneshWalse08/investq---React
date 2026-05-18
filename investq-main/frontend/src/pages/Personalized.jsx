@@ -140,41 +140,43 @@ export default function Personalized() {
       {/* --- PART 1: AI ASSET ALLOCATION (KNN) --- */}
       {allocation && !loading && (
         <div className="chart-card" style={{ marginBottom: '2rem' }}>
-          <h2 style={{ marginBottom: '1.5rem', fontSize:'1.1rem' }}>Step 1: AI Asset Allocation Strategy (KNN Model)</h2>
+          <h2 style={{ marginBottom: '1.5rem', fontSize:'1.2rem', color: 'var(--ink)' }}>Step 1: AI Asset Allocation Strategy</h2>
           
-          {/* Visual CSS Bar Graph */}
-          <div style={{ width: '100%', height: '35px', display: 'flex', borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
-            {Object.entries(allocation.allocations).map(([asset, percentage], index) => (
-              <div 
-                key={asset} 
-                title={`${asset}: ${percentage}%`}
-                style={{ 
-                  width: `${percentage}%`, background: colors[index % colors.length],
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontWeight: 'bold', fontSize: '0.75rem',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                {percentage > 5 ? `${percentage}%` : ''}
-              </div>
-            ))}
-          </div>
+          <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+            
+            {/* The Specific Table View Requested */}
+            <div style={{ flex: '1', minWidth: '300px' }}>
+              <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#f8fafc', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #cbd5e1', background: '#e2e8f0', color: '#334155' }}>
+                    <th style={{ padding: '1rem', fontWeight: 'bold' }}>Output Category</th>
+                    <th style={{ padding: '1rem', fontWeight: 'bold' }}>AI Suggested Allocation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(allocation.allocations).map(([asset, percentage], index) => (
+                    <tr key={asset} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '1rem', fontWeight: 'bold', color: 'var(--ink)' }}>{asset}</td>
+                      <td style={{ padding: '1rem', color: 'var(--moss)', fontWeight: 'bold', fontSize: '1.1rem' }}>{percentage}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          {/* Reasoning Legend */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:'1rem' }}>
-             {allocation.reasoning.map((item, index) => (
-               <div key={index} style={{ padding:'1rem', background:'#f8fafc', borderRadius:'8px', borderLeft:`4px solid ${colors[index % colors.length]}` }}>
-                 <div style={{ fontWeight:'bold', display:'flex', justifyContent:'space-between' }}>
-                    <span>{item.asset}</span>
-                    <span style={{ color: 'var(--moss, #16a34a)' }}>{item.allocation}%</span>
+            {/* AI Reasoning Panel */}
+            <div style={{ flex: '1', minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+               {allocation.reasoning.map((item, index) => (
+                 <div key={index} style={{ padding:'1rem', background:'#fff', borderRadius:'8px', borderLeft:`4px solid ${colors[index % colors.length]}`, borderTop: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
+                   <div style={{ fontWeight:'bold', color: 'var(--ink)' }}>{item.asset} Reasoning</div>
+                   <div style={{ fontSize:'0.9rem', color:'var(--smoke)', marginTop:'0.3rem' }}>{item.reason}</div>
                  </div>
-                 <div style={{ fontSize:'0.8rem', color:'var(--smoke)', marginTop:'0.5rem' }}>{item.reason}</div>
-               </div>
-             ))}
+               ))}
+            </div>
           </div>
         </div>
       )}
-
+      
       {/* --- PART 2: EXISTING STOCK RECOMMENDATIONS --- */}
       {stats && (
         <>
