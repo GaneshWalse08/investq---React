@@ -21,6 +21,7 @@ import FDAnalyzer from "./pages/FDAnalyzer";
 import SchemeIntelligence from "./pages/SchemeIntelligence";
 import InsuranceComparison from "./pages/InsuranceComparison";
 import RetirementPlanner from "./pages/RetirementPlanner";
+import FinancialHealth from './pages/FinancialHealth';
 
 const ProtectedRoute = ({ children }) => {
   const user = localStorage.getItem("esg_user"); // Back to the old name!
@@ -161,6 +162,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route path="/financial-health" element={<FinancialHealth />} />
         </Routes>
       </Layout>
     </Router>

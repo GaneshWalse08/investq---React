@@ -25,6 +25,9 @@ from services.scheme_service import SchemeService
 from services.insurance_service import InsuranceService
 from services.retirement_service import RetirementService
 from services.ml_recommendation_service import MLRecommendationService
+# existing imports...
+from services.ml_recommendation_service import MLRecommendationService
+from services.ml_financial_health_service import MLFinancialHealthService # <-- NEW
 
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
@@ -47,6 +50,7 @@ news_svc          = NewsService()
 chatbot_svc       = ChatbotService()
 ml_svc            = MLService(data_svc)
 ml_rec_svc = MLRecommendationService()
+ml_health_svc     = MLFinancialHealthService()
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -871,6 +875,39 @@ def ml_recommend_allocation_handler():
     except Exception as e:
         import traceback
         print(f"🚨 ALLOCATION ERROR:\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+
+    # ════════════════════════════════════════════════════════════════════════════
+# FINANCIAL HEALTH ML PREDICTION ENDPOINT
+# ════════════════════════════════════════════════════════════════════════════
+@app.route('/api/ml/financial_health', methods=['POST', 'OPTIONS'])
+def analyze_financial_health_handler():
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True}), 200
+        
+    try:
+        user_data = request.json
+        result = ml_health_svc.predict_health(user_data)
+        
+        # Add automated AI reasoning for the UI
+        if result.get('success'):
+            score = result['financial_health_score']
+            reasoning = "Your financials are solid."
+            
+            if score >= 80:
+                reasoning = "Outstanding financial health. You maintain a stellar savings ratio and have an excellent emergency fund."
+            elif score >= 50:
+                reasoning = "Moderate health. Your savings quality is stable, but consider expanding your insurance coverage and reducing overall debt."
+            else:
+                reasoning = "High risk detected. High EMI relative to income and low emergency reserves are severely dragging down your score."
+                
+            result['ai_reasoning'] = reasoning
+            
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        print(f"🚨 HEALTH PREDICTION ERROR:\n{traceback.format_exc()}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
