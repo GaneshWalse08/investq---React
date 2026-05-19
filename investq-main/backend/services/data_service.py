@@ -108,35 +108,55 @@ class DataService:
         self._histories = {}
         self._build_histories()
 
+    class DataService:
+    def __init__(self):
+        self._histories = {}
+        self._build_histories()
+
     def _build_histories(self):
+        import time # Added to allow pausing between downloads
         print(f"📥 Fetching LIVE market data from Yahoo Finance for {len(STOCKS)} companies...")
         tickers = list(STOCKS.keys())
         
-        # Download in chunks if needed, but 150 usually works in one fast batch
-        data = yf.download(" ".join(tickers), period="1y", progress=False)
-        
-        for ticker in tickers:
+        # Download in batches of 30 to bypass Yahoo Finance Bot-Protection
+        chunk_size = 30
+        for i in range(0, len(tickers), chunk_size):
+            chunk = tickers[i:i + chunk_size]
+            print(f"⏳ Downloading batch {i//chunk_size + 1} of {(len(tickers)//chunk_size) + 1}...")
+            
             try:
-                df = pd.DataFrame({
-                    'Close': data['Close'][ticker],
-                    'Open': data['Open'][ticker],
-                    'High': data['High'][ticker],
-                    'Low': data['Low'][ticker],
-                    'Volume': data['Volume'][ticker]
-                }).dropna()
+                # threads=False is CRITICAL here so it doesn't open 30 connections at once
+                data = yf.download(" ".join(chunk), period="1y", progress=False, threads=False)
                 
-                if df.empty: continue
+                for ticker in chunk:
+                    try:
+                        df = pd.DataFrame({
+                            'Close': data['Close'][ticker],
+                            'Open': data['Open'][ticker],
+                            'High': data['High'][ticker],
+                            'Low': data['Low'][ticker],
+                            'Volume': data['Volume'][ticker]
+                        }).dropna()
+                        
+                        if df.empty: continue
+                        
+                        self._histories[ticker] = {
+                            'dates': df.index.strftime('%Y-%m-%d').tolist(),
+                            'prices': df['Close'].tolist(),
+                            'open': df['Open'].tolist(),
+                            'high': df['High'].tolist(),
+                            'low': df['Low'].tolist(),
+                            'volume': df['Volume'].tolist()
+                        }
+                    except Exception:
+                        pass
                 
-                self._histories[ticker] = {
-                    'dates': df.index.strftime('%Y-%m-%d').tolist(),
-                    'prices': df['Close'].tolist(),
-                    'open': df['Open'].tolist(),
-                    'high': df['High'].tolist(),
-                    'low': df['Low'].tolist(),
-                    'volume': df['Volume'].tolist()
-                }
-            except Exception:
-                pass
+                # Pause for 1 second before asking Yahoo for the next batch
+                time.sleep(1) 
+                
+            except Exception as e:
+                print(f"⚠️ Batch failed: {e}")
+                
         print(f"✅ Live data loaded successfully for {len(self._histories)} companies!")
 
     def get_all_stocks(self):
