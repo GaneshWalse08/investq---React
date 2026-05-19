@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
+  // Point directly to your live Render backend URL
   baseURL: 'https://investq-react.onrender.com/api', 
 });
 
