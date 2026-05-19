@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://TEMP-PLACEHOLDER-URL.onrender.com/api', 
+  baseURL: 'https://investq-react.onrender.com/api', 
 });
 
 export const loginUser = (credentials) => api.post('/auth/login', credentials);
