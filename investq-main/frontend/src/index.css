@@ -504,3 +504,61 @@ body {
 .fh-ai-text strong {
   color: #1e3a8a;
 }
+
+
+/* =========================================
+   RETIREMENT PLANNER STYLES
+   ========================================= */
+
+.retirement-container {
+  display: grid;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* When results are showing, give the form a comfortable fixed width and let results take the rest */
+.retirement-container.has-results {
+  grid-template-columns: 400px 1fr; 
+}
+
+/* When NO results are showing, center the form nicely on the screen */
+.retirement-container.no-results {
+  grid-template-columns: minmax(auto, 600px);
+  justify-content: center; 
+}
+
+@media (max-width: 1024px) {
+  .retirement-container.has-results,
+  .retirement-container.no-results {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* --- MAIN CONTENT & LAYOUT --- */
+.main { 
+  margin-left: var(--sidebar-w); 
+  flex: 1; 
+  padding: 2rem; 
+  min-height: 100vh; 
+  width: calc(100% - var(--sidebar-w));
+  overflow-x: hidden; /* Prevents horizontal scrolling */
+}
+
+/* This applies to Dashboard, Rankings, Portfolio, Goal Planner, etc. */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* We will use this for the 3 outlier pages */
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.page-header { margin-bottom: 1.5rem; }
+.page-header h1 { font-family: 'DM Serif Display', serif; font-size: 1.8rem; }
+.page-header p { color: var(--smoke); font-size: 0.9rem; margin-top: 0.2rem; }

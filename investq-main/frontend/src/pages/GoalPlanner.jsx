@@ -146,7 +146,7 @@ export default function GoalPlanner() {
   const isGoalReached = finalProjectedWealth >= targetAmount;
 
   return (
-    <div className="page active">
+    <div style={{ maxWidth: '1300px', margin: '0 auto', width: '100%' }}>
       <div className="page-header">
         <h1>AI Goal-Based Wealth Planner</h1>
         <p>Define your life milestones. The AI will factor in your timeline and monthly contributions to build a mathematically optimized portfolio to get you there.</p>

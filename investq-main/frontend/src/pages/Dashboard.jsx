@@ -124,7 +124,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="page active">
+    <div style={{ maxWidth: '1300px', margin: '0 auto', width: '100%' }}>
       <div className="page-header">
         {/* Dynamically displaying the actual username */}
         <h1>

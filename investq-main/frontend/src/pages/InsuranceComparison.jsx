@@ -158,7 +158,7 @@ const InsuranceComparison = () => {
   };
 
   return (
-    <div className="main" style={{ background: 'var(--paper)', minHeight: '100vh' }}>
+    <div style={{ maxWidth: '1300px', margin: '0 auto', width: '100%', minHeight: '100vh' }}>
       
       {step < 5 && (
         <div style={{ maxWidth: '700px', margin: '0 auto', paddingTop: '3rem' }}>
@@ -187,7 +187,7 @@ const InsuranceComparison = () => {
       )}
 
       {step === 6 && results && (
-        <div style={{ padding: '2rem' }}>
+        <div style={{ paddingTop: '2rem' }}>
           <header className="page-header">
             <h1>Sovereign Policy Rankings</h1>
             <p>{results.profile_analysis}</p>

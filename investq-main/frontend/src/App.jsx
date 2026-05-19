@@ -31,6 +31,26 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// const Layout = ({ children }) => {
+//   const location = useLocation();
+//   const isLoginPage = location.pathname === "/login";
+
+//   return (
+//     <div style={{ display: "flex", minHeight: "100vh", width: "100%" }}>
+//       {!isLoginPage && <Sidebar />}
+//       <main
+//         className="main"
+//         style={{
+//           marginLeft: isLoginPage ? "0" : "var(--sidebar-w)",
+//           width: "100%",
+//         }}
+//       >
+//         {children}
+//       </main>
+//     </div>
+//   );
+// };
+
 const Layout = ({ children }) => {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
@@ -38,12 +58,10 @@ const Layout = ({ children }) => {
   return (
     <div style={{ display: "flex", minHeight: "100vh", width: "100%" }}>
       {!isLoginPage && <Sidebar />}
+      {/* We removed the hardcoded width: 100% here so the CSS can do its job */}
       <main
         className="main"
-        style={{
-          marginLeft: isLoginPage ? "0" : "var(--sidebar-w)",
-          width: "100%",
-        }}
+        style={isLoginPage ? { marginLeft: "0", width: "100%" } : {}}
       >
         {children}
       </main>

@@ -96,7 +96,7 @@ export default function FDAnalyzer() {
   const isLosingMoney = result && result.real_rate <= 0;
 
   return (
-    <div className="page active">
+    <div style={{ maxWidth: '1300px', margin: '0 auto', width: '100%' }}>
       <div className="page-header">
         <h1>FD vs. Inflation Reality Checker</h1>
         <p>A mathematical analysis proving how inflation silently erodes the purchasing power of "safe" Fixed Deposits over time.</p>

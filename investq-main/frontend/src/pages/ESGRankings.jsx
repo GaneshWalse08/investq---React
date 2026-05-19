@@ -25,7 +25,7 @@ export default function ESGRankings() {
   }, [sector, esgWeight]); // React automatically refetches when these change!
 
   return (
-    <div className="page active">
+    <div style={{ maxWidth: '1300px', margin: '0 auto', width: '100%' }}>
       <div className="page-header">
         <h1>ESG-Aware Stock Rankings</h1>
         <p>Combined financial performance and ESG sustainability scoring.</p>

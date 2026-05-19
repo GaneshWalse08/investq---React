@@ -132,7 +132,7 @@ export default function PortfolioBuilder() {
   };
 
   return (
-    <div className="page active" style={{ position: 'relative' }}>
+    <div style={{ maxWidth: '1300px', margin: '0 auto', width: '100%', position: 'relative' }}>
       <div className="page-header">
         <h1>Model Portfolio Analyzer</h1>
         <p>Build a theoretical ESG portfolio to analyze expected returns, risk, and sustainability scores.</p>

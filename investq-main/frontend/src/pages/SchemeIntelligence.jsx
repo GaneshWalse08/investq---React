@@ -87,7 +87,7 @@ const SchemeIntelligence = () => {
   };
 
   return (
-    <div className="main" style={{ paddingBottom: '5rem', background: '#f8fafc' }}>
+    <div style={{ maxWidth: '1300px', margin: '0 auto', width: '100%', paddingBottom: '5rem' }}>
       <header className="page-header" style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontFamily: 'DM Serif Display', fontSize: '2.5rem', color: 'var(--ink)' }}>🏛️ Sovereign Scheme Intelligence</h1>
         <p style={{ fontSize: '1.1rem', color: 'var(--smoke)' }}>The simplest way to find the best Government Schemes for your family.</p>
