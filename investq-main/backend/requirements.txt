@@ -3,8 +3,8 @@ flask-cors==4.0.0
 numpy
 pandas
 scipy
-scikit-learn
-yfinance==0.2.33
+scikit-learn==1.2.2
+yfinance>=0.2.40
 requests==2.31.0
 python-dotenv==1.0.0
 PyJWT==2.8.0
