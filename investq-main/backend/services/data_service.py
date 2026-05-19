@@ -5,6 +5,7 @@ Upgraded: Now tracks 150+ live companies across all major sectors.
 import yfinance as yf
 import pandas as pd
 import warnings
+import time
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -108,13 +109,7 @@ class DataService:
         self._histories = {}
         self._build_histories()
 
-    class DataService:
-    def __init__(self):
-        self._histories = {}
-        self._build_histories()
-
     def _build_histories(self):
-        import time # Added to allow pausing between downloads
         print(f"📥 Fetching LIVE market data from Yahoo Finance for {len(STOCKS)} companies...")
         tickers = list(STOCKS.keys())
         
