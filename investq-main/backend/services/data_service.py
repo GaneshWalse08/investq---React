@@ -110,18 +110,28 @@ class DataService:
         self._build_histories()
 
     def _build_histories(self):
+        import time 
+        import requests # <-- New import to create a browser session
+        
         print(f"📥 Fetching LIVE market data from Yahoo Finance for {len(STOCKS)} companies...")
         tickers = list(STOCKS.keys())
         
-        # Download in batches of 30 to bypass Yahoo Finance Bot-Protection
-        chunk_size = 30
+        # --- THE DISGUISE ---
+        # Make the Python request look exactly like a real Google Chrome browser
+        session = requests.Session()
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        })
+        
+        # Reduced to batches of 15 to be extra safe
+        chunk_size = 15
         for i in range(0, len(tickers), chunk_size):
             chunk = tickers[i:i + chunk_size]
             print(f"⏳ Downloading batch {i//chunk_size + 1} of {(len(tickers)//chunk_size) + 1}...")
             
             try:
-                # threads=False is CRITICAL here so it doesn't open 30 connections at once
-                data = yf.download(" ".join(chunk), period="1y", progress=False, threads=False)
+                # Add session=session so yfinance uses our disguise
+                data = yf.download(" ".join(chunk), period="1y", progress=False, threads=False, session=session)
                 
                 for ticker in chunk:
                     try:
@@ -146,8 +156,8 @@ class DataService:
                     except Exception:
                         pass
                 
-                # Pause for 1 second before asking Yahoo for the next batch
-                time.sleep(1) 
+                # Pause for 2 seconds to act like a slow human
+                time.sleep(2) 
                 
             except Exception as e:
                 print(f"⚠️ Batch failed: {e}")
