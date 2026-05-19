@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // Change localhost to 127.0.0.1 right here!
-  baseURL: 'http://127.0.0.1:5000/api', 
+  
+  baseURL: 'https://investq-backend.onrender.com/api', 
 });
 
 export const loginUser = (credentials) => api.post('/auth/login', credentials);
