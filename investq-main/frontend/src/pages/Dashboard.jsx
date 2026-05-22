@@ -45,6 +45,7 @@ export default function Dashboard() {
         const [summaryRes, sectorRes] = await Promise.all([
           getDashboardSummary(),
           api.get("/research/sector_heatmap"),
+          
         ]);
 
         setData(summaryRes.data);
@@ -57,6 +58,7 @@ export default function Dashboard() {
       }
     };
     fetchData();
+    
   }, []);
 
   if (loading) return <div className="loading">Loading AI Insights...</div>;
@@ -128,7 +130,7 @@ export default function Dashboard() {
       <div className="page-header">
         {/* Dynamically displaying the actual username */}
         <h1>
-          Good morning, <span>{username}</span> 👋
+          Hello <span>{username}!</span> 👋
         </h1>
         <p>
           Here's your sustainable investment intelligence briefing for today.

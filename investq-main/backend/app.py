@@ -304,6 +304,75 @@ def dashboard_summary():
         'top_losers'        : top_losers        
     })
 
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# COMMUNITY STATS (FOR PROFILE PAGE AI CLUSTERING)
+# ════════════════════════════════════════════════════════════════════════════
+@app.route('/api/dashboard/community-stats', methods=['GET'])
+def community_stats():
+    # Fetch your real registered users directly from your auth service!
+    try:
+        users = auth_svc.get_all_users()
+    except Exception as e:
+        users = list(auth_svc.users.values()) if hasattr(auth_svc, 'users') else []
+    
+    # Initialize empty graph data
+    response_data = {
+        "userCount": len(users),
+        "personas": [],
+        "riskDistribution": [
+            {"name": "Low (Conservative)", "users": 0},
+            {"name": "Moderate (Balanced)", "users": 0},
+            {"name": "High (Aggressive)", "users": 0}
+        ],
+        "esgDistribution": [
+            {"name": "Low (Returns)", "users": 0},
+            {"name": "Medium (Balanced)", "users": 0},
+            {"name": "High (Impact)", "users": 0},
+            {"name": "Very High (Strict)", "users": 0}
+        ],
+        "error": None
+    }
+
+    # Tally up the simple distributions (Risk and ESG) for all users
+    for u in users:
+        prefs = u.get('preferences', {})
+        risk = prefs.get('risk_tolerance', 'moderate')
+        esg = prefs.get('esg_priority', 'medium')
+        
+        if risk == 'low': response_data["riskDistribution"][0]["users"] += 1
+        elif risk == 'moderate': response_data["riskDistribution"][1]["users"] += 1
+        elif risk == 'high': response_data["riskDistribution"][2]["users"] += 1
+        
+        if esg == 'low': response_data["esgDistribution"][0]["users"] += 1
+        elif esg == 'medium': response_data["esgDistribution"][1]["users"] += 1
+        elif esg == 'high': response_data["esgDistribution"][2]["users"] += 1
+        elif esg == 'very_high': response_data["esgDistribution"][3]["users"] += 1
+
+    # Run the K-Means clustering algorithm using your clustering_svc
+    cluster_results = clustering_svc.cluster_investors(users)
+    
+    if 'error' in cluster_results:
+        # Scikit-learn requires at least 3 users to form clusters
+        response_data["error"] = cluster_results['error'] 
+    else:
+        # Map the cluster results to the Recharts format for the Pie Chart
+        personas_data = []
+        sizes = cluster_results.get('cluster_sizes', {})
+        personas_info = cluster_results.get('personas', {})
+        
+        for cluster_id, count in sizes.items():
+            info = personas_info.get(cluster_id, {})
+            if count > 0:
+                personas_data.append({
+                    "name": info.get('name', f"Cluster {cluster_id}"),
+                    "value": count,
+                    "color": info.get('color', '#8884d8')
+                })
+        response_data["personas"] = personas_data
+
+    return jsonify(response_data), 200
 # ════════════════════════════════════════════════════════════════════════════
 # DAILY AUTO UPDATE SCHEDULER
 # ════════════════════════════════════════════════════════════════════════════

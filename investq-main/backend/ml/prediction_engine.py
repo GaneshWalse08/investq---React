@@ -1,10 +1,11 @@
+
+# invest, hold and sell cha logic ani risk, finantial metrics
+
 import numpy as np
 
 def predict_signal(metrics, esg_data, risk_tolerance='moderate'):
-    """
-    Rule-based + scoring ML signal generator.
-    Returns INVEST, HOLD, or SELL with explanation.
-    """
+    
+
     score = 0
     reasons = []
     warnings = []
